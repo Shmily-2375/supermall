@@ -11,8 +11,9 @@
       <DetailParamInfo ref="params" :paramInfo="paramInfo"/>
       <DetailCommentInfo ref="comment" :commentInfo="commentInfo"/>
       <GoodsList ref="recommend" :goods="recommends"/>
-    </scroll>
-      <DetailBottomBar/>
+      </scroll>
+      <DetailBottomBar @addCart="addToCart"/>
+      <Toast :message="message" :show="show"/>
   </div>
 </template>
 
@@ -25,12 +26,15 @@
   import DetailParamInfo from "./childComps/DetailParamInfo";
   import DetailCommentInfo from "./childComps/DetailCommentInfo";
   import DetailBottomBar from "./childComps/DetailBottomBar";
+  import Toast from "../../components/common/toast/Toast";
 
   import Scroll from "../../components/common/scroll/Scroll";
   import GoodsList from "../../components/content/goods/GoodsList";
 
   import {getDetail, Goods, Shop, GoodsParam, getRecommend} from "../../network/detail";
   import {debounce} from "../../common/utils";
+
+  import {mapActions} from 'vuex'
 
   export default {
     name: "Detail",
@@ -46,6 +50,7 @@
       DetailCommentInfo,
       GoodsList,
       DetailBottomBar,
+      Toast
     },
     data(){
       return{
@@ -59,6 +64,8 @@
         recommends: [],
         themeTopYs: [],
         currentIndex: 0,
+        message:'',
+        show: false
       }
     },
     created() {
@@ -107,6 +114,9 @@
       })
     },
     methods:{
+
+      ...mapActions(['addCart']),
+
       imageLoad(){
         this.$refs.scroll.refresh()
         this.themeTopYs = []
@@ -115,6 +125,27 @@
         this.themeTopYs.push(this.$refs.comment.$el.offsetTop)
         this.themeTopYs.push(this.$refs.recommend.$el.offsetTop)
         this.themeTopYs.push(Number.MAX_VALUE)
+      },
+      addToCart(){
+        //1.获取购物车需要展示的信息
+        const product = {}
+        product.image = this.topImages[0]
+        product.title = this.goods.title
+        product.desc = this.goods.desc
+        product.price = this.goods.realPrice
+        product.iid = this.iid
+        //2.将商品添加到购物车里
+        // this.$store.dispatch('addCart', product).then(res =>{
+        //   console.log(res);
+        // })
+        this.addCart(product).then(res =>{
+          this.show = true
+          this.message = res
+          setTimeout(() => {
+            this.show = false
+            this.message = ''
+          }, 1500)
+        })
       },
       titleClick(index){
         this.$refs.scroll.scrollTo(0, -this.themeTopYs[index], 200)
